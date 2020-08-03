@@ -1,0 +1,9 @@
+<h2>Registered Users</h2>
+
+<% allUsers.forEach(user => { %>
+    <div>
+        <p><%= user.name %></p>
+        <p><%= user.email %></p>
+        <p><%= user.password %></p>
+    </div><br>
+<% }) %>
