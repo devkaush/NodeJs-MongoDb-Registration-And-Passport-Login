@@ -4,6 +4,7 @@ if (process.env.NODE_ENV !== 'production') {
   
 const express = require('express')
 const app = express()
+const expressLayouts = require('express-ejs-layouts')
 const bcrypt = require('bcrypt')
 const passport = require('passport')
 const flash = require('express-flash')
@@ -12,22 +13,13 @@ const methodOverride = require('method-override')
 const mongoose = require('mongoose')
 const USER = require('./models/user')
 
-//const initializePassport = require('./passport-config')
 require('./passport-config')(passport)
-//initializePassport(
-//  passport,
-//  email => users.find(user => user.email === email),
-//  id => users.find(user => user.id === id)
-//)
 
-//initializePassport(
- //   passport,
- //   async (email) => await USER.findOne({email:email}),
- //   async (id) => await USER.findById(id)
-  //)
-const users = []
 
-app.set('view-engine', 'ejs')
+app.set('view engine', 'ejs')
+app.set('views', __dirname + '/views')
+app.set('layout', 'layouts/layout')
+app.use(expressLayouts)
 app.use(express.urlencoded({ extended: false }))
 app.use(flash())
 app.use(session({
@@ -37,6 +29,7 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(express.static('public'))
 app.use(methodOverride('_method'))
 
 
@@ -48,11 +41,11 @@ db.once('open', () => console.log('connected to Mongoose'))
 
 
 app.get('/', checkAuthenticated, (req, res) => {
-    res.render('index.ejs', { name: req.user.name })
+    res.render('index.ejs', { name: req.user.name, title:'Dashboard' })
 })
 
 app.get('/login', checkNotAuthenticated, (req, res) =>{
-    res.render('login.ejs')
+    res.render('login.ejs', {title:'Login'})
 })
 
 app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
@@ -62,18 +55,12 @@ app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
   }))
 
 app.get('/register', checkNotAuthenticated, (req, res) =>{
-    res.render('register.ejs')
+    res.render('register.ejs', {title:'Register'})
 })
 
 app.post('/register', checkNotAuthenticated, async (req, res) =>{
     try{
         const hashedPassword = await bcrypt.hash(req.body.password, 10)
-        users.push({
-            id: Date.now().toString(),
-            name:req.body.name,
-            email:req.body.email,
-            password:hashedPassword
-        })
 
         const newUser = new USER({
             name:req.body.name,
@@ -87,7 +74,6 @@ app.post('/register', checkNotAuthenticated, async (req, res) =>{
     }catch{
         res.redirect('/register')
     }
-    console.log(users)
 })
 
 app.get('/seeall', async (req, res) =>{
